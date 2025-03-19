@@ -1,13 +1,20 @@
 {
   "name": "cognihub",
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "build": "ts-node ./scripts/build.ts",
+    "dev": "nodemon --watch ./ --watch server.ts --exec \"node --loader ts-node/esm --experimental-specifier-resolution=node server.ts\"",
     "clean-install": "rm -rf ./node_modules && rm -r package-lock.json && npm install",
-    "dev": "NODE_ENV=development ts-node ./src",
-    "lint": "eslint .",
-    "start": "NODE_ENV=production node -r ./config.js ./dist",
-    "type-check": "tsc --noEmit"
+    "type-check": "npx tsc --noEmit",
+    "build": "tsc && cp package.json ../dist/"
+  },
+  "nodemonConfig": {
+    "watch": [
+      "./**/*",
+      "server.ts"
+    ],
+    "ext": "ts, js, html",
+    "exec": "node --loader ts-node/esm --experimental-specifier-resolution=node server.ts"
   },
   "engines": {
     "node": ">=16.0.0"
@@ -15,25 +22,15 @@
   "dependencies": {
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "inserturlparams": "^2.0.5",
-    "module-alias": "^2.2.3"
+    "express": "^4.21.2"
   },
   "devDependencies": {
-    "@eslint/js": "^9.22.0",
-    "@stylistic/eslint-plugin-js": "^4.2.0",
-    "@stylistic/eslint-plugin-ts": "^4.2.0",
     "@types/cookie-parser": "^1.4.8",
-    "@types/eslint__js": "^8.42.3",
     "@types/express": "^5.0.0",
-    "@types/module-alias": "^2.0.4",
     "@types/node": "^22.13.10",
-    "eslint": "^9.22.0",
-    "eslint-plugin-n": "^17.16.2",
     "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.8.2",
-    "typescript-eslint": "^8.26.1"
+    "typescript": "^5.8.2"
   }
 }
