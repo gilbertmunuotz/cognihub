@@ -3,9 +3,9 @@ import express from "express";
 import dotenv from "dotenv";
 import HttpStatusCodes from "./constants/HttpStatusCodes";
 import { Request, Response, NextFunction } from "express";
-import ServiceRoute from "./routes/service";
 import { Server } from "socket.io";
 import { createServer } from "http";
+import { handleSocketConnection } from "./api/socketHandler";
 
 // Load env variables
 dotenv.config();
@@ -25,18 +25,7 @@ const io = new Server(httpServer, {
 });
 
 // ** Handle Socket.IO Events ** //
-io.on("connection", (socket) => {
-    console.log(`User Connected: ${socket.id}`);
-
-    socket.on("message", (data) => {
-        console.log(`Received Message: ${data}`);
-        socket.emit("response", `You sent: ${data}`);
-    })
-
-    socket.on("disconnect", () => {
-        console.log(`User Disconnected: ${socket.id}`);
-    });
-})
+handleSocketConnection(io);
 
 // Basic middleware
 app.use(express.json());
@@ -53,8 +42,6 @@ app.get("/api", (req: Request, res: Response, next: NextFunction) => {
     }
 });
 
-//Define Routes Here
-app.use('/api/v1/service', ServiceRoute); // Service Related Route
 
 // **** Start & Listen to Server **** //
 const port = process.env.PORT;
