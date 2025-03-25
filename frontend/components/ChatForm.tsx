@@ -36,7 +36,7 @@ export default function ChatForm() {
         return () => {
             socketRef.current?.disconnect();
         };
-    }, [response]);
+    }, []);
 
     const sendRequest = () => {
         if (!socketRef.current) {
