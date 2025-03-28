@@ -12,8 +12,9 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { SERVER_URI } from "@/constants/constant";
+import { ChatFormProps } from "@/interfaces/interface";
 
-export default function ChatForm() {
+export default function ChatForm({ onChatInteraction }: ChatFormProps) {
 
     const [model, setModel] = useState("");
     const [text, setText] = useState("");
@@ -22,13 +23,13 @@ export default function ChatForm() {
 
     useEffect(() => {
         socketRef.current = io(`${SERVER_URI}`);
-
-        socketRef.current.on("connect", () => {
-            console.log("Connected to Socket.IO server");
-        });
-
+        
         socketRef.current.on("response", (data) => {
-            setResponse((prev) => prev + data);
+            setResponse((prev) => {
+                const newResponse = prev + data;
+                onChatInteraction(newResponse); // Pass cleaned response to parent
+                return newResponse;
+            });
         });
 
         socketRef.current.on("done", () => {
@@ -42,32 +43,32 @@ export default function ChatForm() {
         return () => {
             socketRef.current?.disconnect();
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setText(e.target.value);
+    };
 
     const sendRequest = () => {
         if (!socketRef.current) {
             console.error("Socket.IO not connected");
             return;
         }
-        console.log(response);
         socketRef.current.emit("message", { model, prompt: text });
-        setResponse(""); // Clear previous response
+        setResponse(""); // Clear local response
+        setText(""); // Clear input after sending
+        onChatInteraction(""); // Trigger "Thinking..." state
     };
 
     return (
-        <div className="w-full max-w-3xl p-4 bg-zinc-100 dark:bg-black rounded-lg shadow-md">
-            {/* Chat Responses */}
-            {/* <div className="flex flex-col space-y-2 max-h-64 overflow-y-auto p-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-red-600 dark:bg-red-600">
-                {response}
-            </div> */}
-
-            <div className="border border-gray-300 dark:border-gray-700 p-2 resize-none rounded-md">
-                <div className="flex w-full mb-4">
+        <div className="w-full max-w-5xl p-4 bg-zinc-100 dark:bg-black rounded-2xl shadow-md">
+            <div className="border border-gray-300 dark:border-gray-700 p-2 resize-none rounded-2xl">
+                <div className="flex w-full">
                     {/* Expandable TextArea */}
                     <textarea
                         value={text}
-                        onChange={(e) => setText(e.target.value)}
+                        onChange={handleTextChange}
                         placeholder="Enter Prompt Here..."
                         className="w-full min-h-[40px] max-h-[200px] overflow-hidden resize-none rounded-md focus:outline-none"
                     />
@@ -93,7 +94,7 @@ export default function ChatForm() {
 
 
                         {/* Send Button */}
-                        <Button onClick={sendRequest} className="w-24 flex items-center justify-center">
+                        <Button onClick={sendRequest} disabled={!text.trim() || !model} className="w-24 flex items-center justify-center cursor-pointer">
                             <Send size={18} />Send
                         </Button>
                     </div>
