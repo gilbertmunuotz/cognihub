@@ -32,8 +32,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } catch (error: any) {
                     // Throw the exact backend error message
-                    const errorMessage = error.response?.data?.message
-                    throw new Error(errorMessage);
+                    console.error("Auth error:", error);
+                    return null; // Return null instead of throwing
                 }
             },
         }),
