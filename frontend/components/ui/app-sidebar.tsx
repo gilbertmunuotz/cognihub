@@ -1,26 +1,11 @@
-"use client";
-
 import { Home, User2, ChevronUp } from "lucide-react";
-import {
-    Sidebar,
-    SidebarContent,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarGroupLabel,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    SidebarFooter,
-} from "@/components/ui/sidebar";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, } from "@/components/ui/sidebar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import { auth } from "@/auth";
+import LogoutButton from "../logout";
 
-// Menu items
+// Menu item
 const items = [
     {
         title: "Home",
@@ -29,7 +14,10 @@ const items = [
     }
 ];
 
-export function AppSidebar() {
+export default async function AppSidebar() {
+
+    const session = await auth();
+
     return (
         <Sidebar className="flex flex-col h-full">
             <SidebarContent className="bg-zinc-100 dark:bg-black">
@@ -60,21 +48,21 @@ export function AppSidebar() {
                             <DropdownMenuTrigger asChild>
                                 <SidebarMenuButton className="w-full">
                                     <User2 className="mr-2" />
-                                    <span>Username</span>
+                                    <span>{session?.user.name}</span>
                                     <ChevronUp className="ml-auto" />
                                 </SidebarMenuButton>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                                 side="top"
-                                className="w-[--radix-popper-anchor-width]">
-                                <DropdownMenuItem variant="destructive">
-                                    <span>Sign out</span>
+                                className="w-full">
+                                <DropdownMenuItem>
+                                    <LogoutButton />
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarFooter>
-        </Sidebar>
+        </Sidebar >
     );
 }

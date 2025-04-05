@@ -1,63 +1,106 @@
-import NextAuth from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials"
-import { SERVER_URI } from "@/constants/constant";
 import axios from "axios";
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+import { SERVER_URI } from "./constants/constant";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     providers: [
-        // Local Credentials Provider
+        // Google Providers
+        GoogleProvider({
+            clientId: process.env.CLIENT_ID!,
+            clientSecret: process.env.CLIENT_SECRET!,
+            authorization: {
+                params: {
+                    prompt: "consent", // Force consent screen for debugging
+                    access_type: "offline", // Request refresh token
+                    response_type: "code",
+                },
+            },
+        }),
+
+        // Local Providers
         CredentialsProvider({
             name: "Credentials",
             credentials: {
-                email: { label: "Email", type: "email" },
+                username: { label: "Username", type: "text" },
                 password: { label: "Password", type: "password" },
             },
+
             async authorize(credentials) {
-                if (!credentials?.email || !credentials?.password) {
-                    throw new Error("All fields are required");
+                if (!credentials?.username || !credentials?.password) {
+                    throw new Error("Username and password are required");
                 }
 
                 try {
-                    const response = await axios.post(`${SERVER_URI}/api/v1/auth/local/login`, {
-                        email: credentials.email,
+                    const response = await axios.post(`${SERVER_URI}/api/v1/auth/credentials/auth`, {
+                        username: credentials.username,
                         password: credentials.password,
                     }, {
                         headers: { "Content-Type": "application/json" },
                     });
 
-                    const { token, user } = response.data;
+                    const { user: userData } = response.data;
+                    if (response.status === 200 || userData) {
+                        return {
+                            id: userData.id,
+                            name: userData.name,
+                            email: userData.email,
+                        };
+                    }
 
-                    // Return user object with token for Auth.js to manage
-                    return { name: user.name, email: user.email, token };
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } catch (error: any) {
-                    // Throw the exact backend error message
-                    console.error("Auth error:", error);
-                    return null; // Return null instead of throwing
+                    return null;
+                } catch (error) {
+                    console.error("Credentials login error:", error);
+                    throw new Error("Invalid credentials");
                 }
-            },
-        }),
+            }
+        })
     ],
-    trustHost: true,
+    session: {
+        strategy: "jwt" // Use JWT for session management
+    },
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, account, profile, user }) {
+            // Google OAuth
+            if (account && profile) {
+                token.accessToken = account.access_token; // Google access token
+                token.id = profile?.sub ?? undefined; // Google user ID (sub)
+
+                // Call backend API & send payload
+                const payload = { googleId: profile.sub, email: profile.email, username: profile.name, };
+
+                try {
+                    const response = await axios.post(
+                        `${SERVER_URI}/api/v1/auth/google/OAuth`, payload,
+                        { headers: { "Content-Type": "application/json" }, }
+                    );
+                    if (response.status !== 200) {
+                        console.error("Failed to save user to backend:", response.statusText);
+                    }
+                } catch (error) {
+                    console.error("Error sending user data to backend:", error);
+                }
+            }
+
+            // Credentials login
             if (user) {
-                token.id = user.id as string;
-                token.name = user.name as string;
-                token.email = user.email as string;
+                token.id = user.id
             }
             return token;
         },
+
         async session({ session, token }) {
-            if (session.user && token.user) {
+            // Pass access token and ID to the session
+            if (token.id) {
                 session.user.id = token.id;
-                session.user.name = token.name as string;
-                session.user.email = token.email as string;
             }
             return session;
         },
     },
+    trustHost: true,
+    secret: process.env.NEXTAUTH_SECRET,
     pages: {
-        signIn: "/auth/login",
-    },
+        signIn: "/auth/login"
+    }
 });

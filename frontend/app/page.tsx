@@ -4,8 +4,23 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/theme";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useSession } from "next-auth/react";
 
 export default function LandingPage() {
+
+  const router = useRouter();
+  const { status } = useSession();
+
+  // Redirect if user is logged in
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push("/home")
+    }
+  }, [status, router])
+
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Navbar */}
@@ -13,7 +28,7 @@ export default function LandingPage() {
         <h1 className="text-2xl font-bold">CogniHub</h1>
         <div className="flex items-center gap-4">
           <ModeToggle />
-          <Link href="/home">
+          <Link href="/auth/login">
             <Button variant="outline" className="cursor-pointer">Get Started</Button>
           </Link>
         </div>
@@ -31,7 +46,7 @@ export default function LandingPage() {
         <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mb-6">
           Unlock the power of AI with CogniHub. Get real-time insights, automate tasks, and enhance productivity effortlessly.
         </p>
-        <Link href="/home">
+        <Link href="/auth/login">
           <Button className="text-lg px-6 py-3 cursor-pointer">Try for Free</Button>
         </Link>
       </section>
