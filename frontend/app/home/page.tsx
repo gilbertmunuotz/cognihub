@@ -1,15 +1,14 @@
 "use client"
 
+import { useState, } from "react";
+import { Copy } from 'lucide-react';
+import ReactMarkdown from "react-markdown";
+import { useSession } from "next-auth/react";
 import ChatForm from "@/components/ChatForm";
 import { ModeToggle } from "@/components/theme";
-import { useState, } from "react";
-import { useSession } from "next-auth/react";
-import ReactMarkdown from "react-markdown";
-import { Copy } from 'lucide-react';
 
 export default function ChatPage() {
     const { data: session } = useSession();
-    console.log("User Info", session?.user);
 
     const [showWelcome, setShowWelcome] = useState(true); // Controls welcome visibility
     const [response, setResponse] = useState(""); // Stores LLM response
@@ -61,7 +60,7 @@ export default function ChatPage() {
 
                                     {/* Copy Feedback Message */}
                                     {copied && (
-                                        <p className="text-green-500 text-sm mt-1">✅ Copied to clipboard!</p>
+                                        <p className="text-green-500 text-sm mx-4">✅ Copied to clipboard!</p>
                                     )}
                                 </div>
                             ) : (
