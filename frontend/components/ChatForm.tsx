@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/select";
 import { SERVER_URI } from "@/constants/constant";
 import { ChatFormProps } from "@/interfaces/interface";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, } from "@/components/ui/tooltip"
+
 
 export default function ChatForm({ onChatInteraction }: ChatFormProps) {
 
@@ -23,7 +25,7 @@ export default function ChatForm({ onChatInteraction }: ChatFormProps) {
 
     useEffect(() => {
         socketRef.current = io(`${SERVER_URI}`);
-        
+
         socketRef.current.on("response", (data) => {
             setResponse((prev) => {
                 const newResponse = prev + data;
@@ -43,7 +45,7 @@ export default function ChatForm({ onChatInteraction }: ChatFormProps) {
         return () => {
             socketRef.current?.disconnect();
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -77,7 +79,16 @@ export default function ChatForm({ onChatInteraction }: ChatFormProps) {
                 <div className="flex items-center justify-between">
                     {/* Paper Clip  */}
                     <span className="flex-grow">
-                        <Paperclip />
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger className=" cursor-pointer">
+                                    <Paperclip />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Attach File</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                     </span>
 
                     <div className="flex items-center gap-2">
