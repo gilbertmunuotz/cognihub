@@ -6,6 +6,7 @@ export async function HandleFiles(req: Request, res: Response, next: NextFunctio
     try {
         if (!req.file) {
             res.status(HttpStatusCodes.BAD_REQUEST).json({ message: "No file uploaded" });
+            return;
         }
 
         // File info

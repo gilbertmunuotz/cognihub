@@ -9,9 +9,10 @@ import mongoose from "mongoose";
 import { handleSocketConnection } from "./api/socketHandler";
 import process from "process";
 import authRoutes from "./routes/auth";
+import serviceRoute from "./routes/service";
 import { CLIENT_URI } from "./constants/constant";
 
- 
+
 // **** Load env variables **** //
 dotenv.config();
 
@@ -68,6 +69,7 @@ app.get("/api", (req: Request, res: Response, next: NextFunction) => {
 
 // **** Define Routes Here **** //
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/service", serviceRoute);
 
 // **** Start & Listen to Server **** //
 async function startServer() {
