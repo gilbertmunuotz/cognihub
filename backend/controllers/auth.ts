@@ -47,7 +47,7 @@ export async function CredentialslLogin(req: Request, res: Response) {
     }
 }
 
-// (DESC) Credentials Login
+// (DESC) Credentials Register
 export async function CredentialsRegister(req: Request, res: Response) {
     try {
         const { email, username, password } = req.body;
