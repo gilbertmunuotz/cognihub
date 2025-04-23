@@ -11,7 +11,13 @@ const require = createRequire(import.meta.url);
 pdfjsLib.GlobalWorkerOptions.workerSrc = require("pdfjs-dist/legacy/build/pdf.mjs")
 
 export async function extractTextFromPDF(filePath: string): Promise<string> {
-    const buffer = fs.readFileSync(filePath);
-    const data = await pdfParse(buffer);
-    return data.text;
+    const data = new Uint8Array(fs.readFileSync(filePath));
+    const pdf: PDFDocumentProxy = await pdfjsLib.getDocument({ data }).promise
+
+    let textContext = "";
+
+    for (let index = 1; index <= pdf.numPages; index++) {
+        const element = array[index];
+
+    }
 }
