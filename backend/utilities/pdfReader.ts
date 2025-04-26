@@ -1,24 +1,25 @@
 import fs from "fs";
-import { getDocument } from "pdfjs-dist";
+import path from "path";
 import { PDFDocumentProxy } from "pdfjs-dist/types/src/display/api";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.js";
+import { pathToFileURL } from "url";
 
-// Monkey patch for pdfjs-dist in Node.js
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs'
-
-// Required to use PDF in Node (since no DOM)
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-pdfjsLib.GlobalWorkerOptions.workerSrc = require("pdfjs-dist/legacy/build/pdf.mjs")
+pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(
+    path.join(process.cwd(), "node_modules/pdfjs-dist/legacy/build/pdf.worker.js")
+  ).href;
 
 export async function extractTextFromPDF(filePath: string): Promise<string> {
     const data = new Uint8Array(fs.readFileSync(filePath));
-    const pdf: PDFDocumentProxy = await pdfjsLib.getDocument({ data }).promise
+    const pdf: PDFDocumentProxy = await pdfjsLib.getDocument({ data }).promise;
 
-    let textContext = "";
+    let text = "";
 
-    for (let index = 1; index <= pdf.numPages; index++) {
-        const page = await pdf.getPage(index);
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
         const content = await page.getTextContent();
-        const strings = content.items.map()
+        const pageText = content.items.map((item: any) => item.str).join(" ");
+        text += pageText + "\n";
     }
+
+    return text.trim();
 }
