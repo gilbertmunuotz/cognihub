@@ -37,6 +37,7 @@ export async function handleSocketConnection(io: Server) {
                     { responseType: "stream" }
                 );
 
+
                 response.data.on("data", (chunk: { toString: () => string; }) => {
                     try {
                         const json = JSON.parse(chunk.toString());

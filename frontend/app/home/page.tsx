@@ -39,7 +39,6 @@ export default function ChatPage() {
             <div className="flex-1 flex flex-col items-center">
                 {showWelcome && response === '' ? (
                     <div className="mt-36 text-center">
-                        {/* <h1 className="text-4xl font-bold">Welcome {user?.displayName}</h1> */}
                         <h1 className="text-4xl font-bold">Welcome {session?.user?.name}</h1>
                         <div className="p-4">
                             <p className="text-lg text-gray-500">

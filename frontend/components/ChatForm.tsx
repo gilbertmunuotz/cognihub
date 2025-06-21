@@ -98,8 +98,8 @@ export default function ChatForm({ onChatInteraction }: ChatFormProps) {
                                 <SelectValue placeholder="Pick model" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="llama3.2:latest" className="cursor-pointer">Llama 3.2</SelectItem>
-                                <SelectItem value="deepseek-r1:7b" className="cursor-pointer">DeepSeek R1</SelectItem>
+                                <SelectItem value="llama3.2:latest" className="cursor-pointer">llama3.2</SelectItem>
+                                <SelectItem value="phi:2.7b" className="cursor-pointer">phi</SelectItem>
                             </SelectContent>
                         </Select>
 
