@@ -4,13 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { Button } from "@/components/ui/button";
 import { Send, Paperclip } from "lucide-react"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import { SERVER_URI } from "@/constants/constant";
 import { ChatFormProps } from "@/interfaces/interface";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, } from "@/components/ui/tooltip"
@@ -92,18 +85,6 @@ export default function ChatForm({ onChatInteraction }: ChatFormProps) {
                     </span>
 
                     <div className="flex items-center gap-2">
-                        {/* Model Selector */}
-                        <Select onValueChange={setModel}>
-                            <SelectTrigger className="w-32">
-                                <SelectValue placeholder="Pick model" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="llama3.2:latest" className="cursor-pointer">llama3.2</SelectItem>
-                                <SelectItem value="phi:2.7b" className="cursor-pointer">phi</SelectItem>
-                            </SelectContent>
-                        </Select>
-
-
                         {/* Send Button */}
                         <Button onClick={sendRequest} disabled={!text.trim() || !model} className="w-24 flex items-center justify-center cursor-pointer">
                             <Send size={18} />Send
