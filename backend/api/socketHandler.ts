@@ -1,64 +1,119 @@
-// *** Import NPM Packages *** //
+import { AxiosError } from "axios";
+import axios from "axios";
+import type { IncomingMessage } from "http";
 import { Server, Socket } from "socket.io";
+import type { Readable } from "stream";
 import { OLLAMA_URL } from "../constants/constant";
-import axios from 'axios';
-import { RequestBody } from "interfaces/interface";
-
-// Function to clean response text (remove <think> tags and normalize)
-const cleanResponse = (text: string): string => {
-    // Remove <think> tags (with or without content or spaces)
-    return text
-        .replace(/<think>.*?<\/think>/g, "") // Handles <think>content</think> or <think></think>
-        .replace(/<[^>]+>/g, "") // Removes any remaining HTML-like tags
-};
+import type { AnalyzeDocumentPayload } from "../interfaces/interface";
+import { cleanResponse } from "../helpers/response";
+import { buildAnalyzePrompt } from '../helpers/prompt'
 
 
-// (DESC) Handle Socket.IO events
-export async function handleSocketConnection(io: Server) {
+async function streamOllamaToSocket(body: Readable, socket: Socket): Promise<void> {
+    return new Promise((resolve, reject) => {
+        let lineBuffer = "";
+
+        body.on("data", (chunk: Buffer | string) => {
+            lineBuffer += typeof chunk === "string" ? chunk : chunk.toString("utf8");
+            const lines = lineBuffer.split("\n");
+            lineBuffer = lines.pop() ?? "";
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) continue;
+                try {
+                    const json = JSON.parse(trimmedLine) as { response?: string };
+                    if (typeof json.response === "string" && json.response.length > 0) {
+                        socket.emit("response", cleanResponse(json.response));
+                    }
+                } catch {
+                    // Ignore partial or non-JSON lines
+                }
+            }
+        });
+
+        body.on("end", () => {
+            const remainder = lineBuffer.trim();
+            if (remainder) {
+                try {
+                    const json = JSON.parse(remainder) as { response?: string };
+                    if (typeof json.response === "string" && json.response.length > 0) {
+                        socket.emit("response", cleanResponse(json.response));
+                    }
+                } catch {
+                    // ignore
+                }
+            }
+            resolve();
+        });
+
+        body.on("error", reject);
+    });
+}
+
+export function handleSocketConnection(io: Server): void {
     io.on("connection", (socket: Socket) => {
         console.log(`User Connected: ${socket.id}`);
 
-        socket.on("message", async (data) => {
+        socket.on("analyzeDocument", async (data: AnalyzeDocumentPayload) => {
+            const { model, text, instruction } = data ?? {};
 
-            // Destructure Request Body and explicitly type it
-            const { model, prompt }: RequestBody = data;
-
-            // Validate required fields
-            if (!model || !prompt) {
-                socket.emit("error", "Model and prompt are required!");
+            if (!model?.trim()) {
+                socket.emit("error", "Model is required.");
                 return;
             }
 
+            if (!text?.trim()) {
+                socket.emit("error", "Text is required.");
+                return;
+            }
+
+            const prompt = buildAnalyzePrompt(text, instruction);
+
             try {
-                // Stream data from Ollama API
                 const response = await axios.post(
                     OLLAMA_URL,
-                    { model, prompt },
-                    { responseType: "stream" }
+                    { model, prompt, stream: true },
+                    {
+                        responseType: "stream",
+                        validateStatus: () => true,
+                    },
                 );
 
+                const streamBody = response.data as IncomingMessage | Readable;
 
-                response.data.on("data", (chunk: { toString: () => string; }) => {
-                    try {
-                        const json = JSON.parse(chunk.toString());
-                        if (json.response) {
-                            // Clean the response before emitting
-                            const cleanedResponse = cleanResponse(json.response);
-                            socket.emit("response", cleanedResponse);
-                        }
-                    } catch (error) {
-                        console.error("Error parsing JSON:", error);
-                    }
-                });
+                if (response.status >= 400) {
+                    const errorChunks: Buffer[] = [];
+                    await new Promise<void>((resolve) => {
+                        streamBody.on("data", (c: Buffer) => errorChunks.push(c));
+                        streamBody.on("end", () => resolve());
+                        streamBody.on("error", () => resolve());
+                    }).catch(() => undefined);
+                    const detail = Buffer.concat(errorChunks).toString("utf8").slice(0, 2000);
+                    socket.emit(
+                        "error",
+                        `Ollama error (${response.status}): ${detail || response.statusText}`,
+                    );
+                    return;
+                }
 
-                response.data.on("end", () => {
-                    socket.emit("done", "Message stream complete!");
-                });
+                await streamOllamaToSocket(streamBody, socket);
+                socket.emit("done", "Message stream complete!");
+            } catch (error: unknown) {
+                console.error("Error processing analyzeDocument:", error);
 
-            } catch (error) {
-                console.error("Error processing request:", error);
+                if (axios.isAxiosError(error)) {
+                    const ax = error as AxiosError<{ error?: string }>;
+                    const msg =
+                        typeof ax.response?.data === "object" && ax.response?.data?.error
+                            ? String(ax.response.data.error)
+                            : ax.message;
+                    socket.emit("error", msg || "Failed to process request");
+                    return;
+                }
+
                 socket.emit("error", "Failed to process request");
             }
         });
-    })
+    });
 }

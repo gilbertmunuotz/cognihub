@@ -1,4 +1,5 @@
-export interface RequestBody {
-    model: string,
-    prompt: string
+export interface AnalyzeDocumentPayload {
+    model: string;
+    text: string;
+    instruction?: string;
 }
