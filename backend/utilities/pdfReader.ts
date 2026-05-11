@@ -7,9 +7,13 @@ import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(
-    path.join(__dirname, "../../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"),
-).href;
+// Resolve worker from backend/package `node_modules` (…/backend/utilities → ../node_modules). Using
+// ../../node_modules points at the monorepo root and breaks when pdfjs-dist is only under backend/.
+const workerFile = path.join(
+    __dirname,
+    "../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
+);
+pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(workerFile).href;
 
 export async function extractTextFromPDF(filePath: string): Promise<string> {
     const data = new Uint8Array(fs.readFileSync(filePath));

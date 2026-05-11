@@ -15,3 +15,7 @@ export const PORT = Number.isFinite(resolvedPort) && resolvedPort > 0 ? resolved
 export const CLIENT_URI = env("CLIENT_URI", "http://localhost:3000");
 
 export const OLLAMA_URL = env("OLLAMA_URL", "http://localhost:11434/api/generate");
+
+/** Default local Ollama model (override via OLLAMA_MODEL in `.env`). */
+export const OLLAMA_MODEL = env("OLLAMA_MODEL", "qwen2.5:7b");
+

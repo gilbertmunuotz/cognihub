@@ -3,7 +3,7 @@ import axios from "axios";
 import type { IncomingMessage } from "http";
 import { Server, Socket } from "socket.io";
 import type { Readable } from "stream";
-import { OLLAMA_URL } from "../constants/constant";
+import { OLLAMA_MODEL, OLLAMA_URL } from "../constants/constant";
 import type { AnalyzeDocumentPayload } from "../interfaces/interface";
 import { cleanResponse } from "../helpers/response";
 import { buildAnalyzePrompt } from '../helpers/prompt'
@@ -56,17 +56,14 @@ export function handleSocketConnection(io: Server): void {
         console.log(`User Connected: ${socket.id}`);
 
         socket.on("analyzeDocument", async (data: AnalyzeDocumentPayload) => {
-            const { model, text, instruction } = data ?? {};
-
-            if (!model?.trim()) {
-                socket.emit("error", "Model is required.");
-                return;
-            }
+            const { text, instruction, model: clientModel } = data ?? {};
 
             if (!text?.trim()) {
                 socket.emit("error", "Text is required.");
                 return;
             }
+
+            const model = clientModel?.trim() || OLLAMA_MODEL;
 
             const prompt = buildAnalyzePrompt(text, instruction);
 
